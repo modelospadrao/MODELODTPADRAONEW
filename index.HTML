@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>DT - Filtro, Ordenação e WhatsApp</title>
+
+<style>
+    body { font-family: Arial, sans-serif; background: #eef1f5; padding: 20px; }
+    h2 { margin-bottom: 10px; }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+        margin-top: 15px;
+        border-radius: 6px;
+        overflow: hidden;
+    }
+
+    th, td {
+        padding: 10px;
+        text-align: left;
+        border-bottom: 1px solid #ccc;
+        font-size: 14px;
+    }
+
+    th {
+        background: #004c97;
+        color: white;
+        cursor: pointer;
+    }
+
+    tr:hover { background: #f5faff; }
+
+    .upload-box, .filtro-box {
+        background: white;
+        padding: 12px;
+        width: 360px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+        margin-bottom: 15px;
+    }
+
+    button {
+        padding: 6px 12px;
+        background: #008000;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+    button.gerado {
+        background: #cc0000 !important;
+    }
+
+    tr.marcado {
+        background: #fff0f0 !important;
+    }
+</style>
+</head>
+<body>
+
+<h2>Lista de DT com Filtro + Ordenação + WhatsApp</h2>
+
+<div class="upload-box">
+    <b>Abrir planilha XLSX:</b><br>
+    <input type="file" id="arquivoXLSX" accept=".xlsx">
+</div>
+
+<div class="filtro-box">
+    <b>Filtrar pela BASE:</b><br>
+    <select id="filtroBase" onchange="filtrarBase()">
+        <option value="">Mostrar Todas</option>
+    </select>
+</div>
+
+<table id="tabelaDT">
+    <thead>
+        <tr>
+            <th onclick="ordenarTabela(0)">Ranking</th>
+            <th onclick="ordenarTabela(1)">Tipo Equipamento</th>
+            <th onclick="ordenarTabela(2)">Equipamento</th>
+            <th onclick="ordenarTabela(3)">Reiteradas</th>
+            <th onclick="ordenarTabela(4)">SE</th>
+            <th onclick="ordenarTabela(5)">Alimentador</th>
+            <th onclick="ordenarTabela(6)">Base</th>
+            <th onclick="ordenarTabela(7)">CHI Total</th>
+            <th onclick="ordenarTabela(8)">Data Últ. Ocorrência</th>
+            <th onclick="ordenarTabela(9)">Endereço</th>
+            <th>Ação</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<script>
+
+// ------------------------------
+// Converter coordenada → link Google Maps
+// ------------------------------
+function enderecoToMaps(txt) {
+    if (!txt.includes(",")) return txt;
+    let c = txt.split(",");
+    if (c.length === 2) {
+        return `<a href="https://www.google.com/maps?q=${c[0].trim()},${c[1].trim()}" target="_blank">Abrir no Maps</a>`;
+    }
+    return txt;
+}
+
+// ------------------------------
+// FILTRAR BASE
+// ------------------------------
+function filtrarBase() {
+    let filtro = document.getElementById("filtroBase").value.toUpperCase();
+    let linhas = document.querySelectorAll("#tabelaDT tbody tr");
+
+    linhas.forEach(linha => {
+        let base = linha.children[6].innerText.toUpperCase();
+        linha.style.display = (filtro === "" || filtro === base) ? "" : "none";
+    });
+}
+
+// ------------------------------
+// ORDENAR TABELA
+// ------------------------------
+let ordemAsc = true;
+
+function ordenarTabela(coluna) {
+    let tbody = document.querySelector("#tabelaDT tbody");
+    let linhas = Array.from(tbody.querySelectorAll("tr"));
+
+    linhas.sort((a, b) => {
+        let t1 = a.children[coluna].innerText.toLowerCase();
+        let t2 = b.children[coluna].innerText.toLowerCase();
+        return ordemAsc ? t1.localeCompare(t2) : t2.localeCompare(t1);
+    });
+
+    ordemAsc = !ordemAsc;
+    linhas.forEach(l => tbody.appendChild(l));
+}
+
+// ------------------------------
+// GERAR MENSAGEM
+// ------------------------------
+function gerarMensagem(botao) {
+    let linha = botao.parentNode.parentNode;
+    let col = linha.getElementsByTagName("td");
+
+    let msg =
+`*MODELO PARA ATENDER DT*
+
+*Ranking:* ${col[0].innerText}
+*Tipo de equipamento:* ${col[1].innerText}
+*Equipamento:* ${col[2].innerText}
+*Reiteradas:* ${col[3].innerText}
+*SE:* ${col[4].innerText}
+*Alimentador:* ${col[5].innerText}
+*Base:* ${col[6].innerText}
+*CHI Total:* ${col[7].innerText}
+*Data última ocorrência:* ${col[8].innerText}
+*Endereço:* ${col[9].innerText}`;
+
+    navigator.clipboard.writeText(msg);
+
+    linha.classList.add("marcado");
+    botao.classList.add("gerado");
+}
+
+// ------------------------------
+// CARREGAR XLSX
+// ------------------------------
+document.getElementById("arquivoXLSX").addEventListener("change", function(e) {
+    let arquivo = e.target.files[0];
+    let reader = new FileReader();
+
+    reader.onload = function(event) {
+        let data = new Uint8Array(event.target.result);
+        let workbook = XLSX.read(data, {type: "array"});
+        let sheet = workbook.Sheets[workbook.SheetNames[0]];
+        let json = XLSX.utils.sheet_to_json(sheet);
+
+        preencherTabela(json);
+    };
+
+    reader.readAsArrayBuffer(arquivo);
+});
+
+// ------------------------------
+// POPULAR TABELA
+// ------------------------------
+function preencherTabela(dados) {
+    let tbody = document.querySelector("#tabelaDT tbody");
+    tbody.innerHTML = "";
+
+    let valoresBase = new Set();
+
+    dados.forEach(item => {
+        let tr = document.createElement("tr");
+
+        tr.innerHTML = `
+            <td>${item.RANKING || ""}</td>
+            <td>${item["TIPO DE EQUIPAMENTO"] || ""}</td>
+            <td>${item.EQUIPAMENTO || ""}</td>
+            <td>${item["QNTD. REITERADA"] || ""}</td>
+            <td>${item.SE || ""}</td>
+            <td>${item.ALIMENTADOR || ""}</td>
+            <td>${item.BASE || ""}</td>
+            <td>${item["CHI TOTAL"] || ""}</td>
+            <td>${item["DT. ULTIMA OCORRÊNCIA"] || ""}</td>
+            <td>${enderecoToMaps(item.ENDEREÇO || "")}</td>
+            <td><button onclick="gerarMensagem(this)">Gerar Msg</button></td>
+        `;
+
+        valoresBase.add(item.BASE);
+        tbody.appendChild(tr);
+    });
+
+    let select = document.getElementById("filtroBase");
+    select.innerHTML = `<option value="">Mostrar Todas</option>`;
+
+    valoresBase.forEach(base => {
+        if (base) select.innerHTML += `<option value="${base}">${base}</option>`;
+    });
+}
+
+</script>
+
+</body>
+</html>
