@@ -28,6 +28,11 @@
         background: #004c97;
         color: white;
         cursor: pointer;
+        user-select: none;
+    }
+
+    th.selected {
+        background: #0076d6 !important;
     }
 
     tr:hover { background: #f5faff; }
@@ -57,37 +62,81 @@
     tr.marcado {
         background: #fff0f0 !important;
     }
+
+    input.codigo {
+        width: 110px;
+        text-transform: uppercase;
+        font-weight: bold;
+    }
+
+    input.obs {
+        width: 160px;
+    }
+
+    .caixa-container {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+    }
+
+.caixa {
+    background: white;
+    padding: 12px;
+    width: 260px;
+    border-radius: 6px;
+    border: 2px solid #aaa;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+    }
+
+.caixa select,
+.caixa input {
+    width: 100%;
+   }
+
 </style>
 </head>
 <body>
 
 <h2>Lista de DT com Filtro + Ordenação + WhatsApp</h2>
 
-<div class="upload-box">
-    <b>Abrir planilha XLSX:</b><br>
-    <input type="file" id="arquivoXLSX" accept=".xlsx">
-</div>
+<div class="caixa-container">
 
-<div class="filtro-box">
-    <b>Filtrar pela BASE:</b><br>
-    <select id="filtroBase" onchange="filtrarBase()">
-        <option value="">Mostrar Todas</option>
-    </select>
+    <div class="caixa">
+        <b>Abrir planilha XLSX:</b><br>
+        <input type="file" id="arquivoXLSX" accept=".xlsx">
+    </div>
+
+    <div class="caixa">
+        <b>Filtrar pela BASE:</b><br>
+        <select id="filtroBase">
+            <option value="">Mostrar Todas</option>
+        </select>
+    </div>
+
+    <div class="caixa">
+        <b>Filtrar pelo ALIMENTADOR:</b><br>
+        <select id="filtroAlim">
+            <option value="">Mostrar Todos</option>
+        </select>
+    </div>
+
 </div>
 
 <table id="tabelaDT">
     <thead>
         <tr>
-            <th onclick="ordenarTabela(0)">Ranking</th>
-            <th onclick="ordenarTabela(1)">Tipo Equipamento</th>
-            <th onclick="ordenarTabela(2)">Equipamento</th>
-            <th onclick="ordenarTabela(3)">Reiteradas</th>
-            <th onclick="ordenarTabela(4)">SE</th>
-            <th onclick="ordenarTabela(5)">Alimentador</th>
-            <th onclick="ordenarTabela(6)">Base</th>
-            <th onclick="ordenarTabela(7)">CHI Total</th>
-            <th onclick="ordenarTabela(8)">Data Últ. Ocorrência</th>
-            <th onclick="ordenarTabela(9)">Endereço</th>
+            <th onclick="ordenarTabela(0, this)">Ranking</th>
+            <th onclick="ordenarTabela(1, this)">Tipo Equipamento</th>
+            <th onclick="ordenarTabela(2, this)">Equipamento</th>
+            <th onclick="ordenarTabela(3, this)">Reiteradas</th>
+            <th onclick="ordenarTabela(4, this)">SE</th>
+            <th onclick="ordenarTabela(5, this)">Alimentador</th>
+            <th onclick="ordenarTabela(6, this)">Base</th>
+            <th onclick="ordenarTabela(7, this)">CHI Total</th>
+            <th onclick="ordenarTabela(8, this)">Data Últ. Ocorrência</th>
+            <th onclick="ordenarTabela(9, this)">Endereço</th>
+            <th onclick="ordenarTabela(10, this)">DT / Incidência</th>
+            <th>Observação</th>
             <th>Ação</th>
         </tr>
     </thead>
@@ -97,57 +146,150 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <script>
+// ------------------------------
+// Destacar TH selecionado
+// ------------------------------
+let ultimoTH = null;
+function destacarTH(th) {
+    if (ultimoTH) ultimoTH.classList.remove("selected");
+    if (th) th.classList.add("selected");
+    ultimoTH = th;
+}
 
 // ------------------------------
-// Converter coordenada → link Google Maps
+// Converter coordenada → link Google Maps (mantive botão)
 // ------------------------------
 function enderecoToMaps(txt) {
+    if (!txt) return "";
     if (!txt.includes(",")) return txt;
     let c = txt.split(",");
     if (c.length === 2) {
-        return `<a href="https://www.google.com/maps?q=${c[0].trim()},${c[1].trim()}" target="_blank">Abrir no Maps</a>`;
+        return `<button onclick="window.open('https://www.google.com/maps?q=${c[0].trim()},${c[1].trim()}')">Mapa</button>`;
     }
     return txt;
 }
 
 // ------------------------------
-// FILTRAR BASE
+// FILTROS (BASE + ALIMENTADOR) — UMA FUNÇÃO QUE APLICA AMBOS
 // ------------------------------
-function filtrarBase() {
-    let filtro = document.getElementById("filtroBase").value.toUpperCase();
-    let linhas = document.querySelectorAll("#tabelaDT tbody tr");
+function aplicarFiltros() {
+    const filtroBase = document.getElementById("filtroBase").value.toUpperCase();
+    const filtroAlim = document.getElementById("filtroAlim").value.toUpperCase();
+    const linhas = document.querySelectorAll("#tabelaDT tbody tr");
 
     linhas.forEach(linha => {
-        let base = linha.children[6].innerText.toUpperCase();
-        linha.style.display = (filtro === "" || filtro === base) ? "" : "none";
+        const base = (linha.children[6].innerText || "").toUpperCase();
+        const alim = (linha.children[5].innerText || "").toUpperCase();
+
+        const condBase = (filtroBase === "" || base === filtroBase);
+        const condAlim = (filtroAlim === "" || alim === filtroAlim);
+
+        linha.style.display = (condBase && condAlim) ? "" : "none";
     });
 }
 
 // ------------------------------
-// ORDENAR TABELA
+// Quando mudar a BASE, atualiza os alimentadores disponíveis
 // ------------------------------
-let ordemAsc = true;
+document.getElementById("filtroBase").addEventListener("change", function() {
+    const baseSelecionada = this.value;
+    const selectAlim = document.getElementById("filtroAlim");
 
-function ordenarTabela(coluna) {
-    let tbody = document.querySelector("#tabelaDT tbody");
-    let linhas = Array.from(tbody.querySelectorAll("tr"));
+    // recolhe alimentadores da tabela (base já carregada)
+    const rows = Array.from(document.querySelectorAll("#tabelaDT tbody tr"));
+    const alimentadores = new Set();
 
-    linhas.sort((a, b) => {
-        let t1 = a.children[coluna].innerText.toLowerCase();
-        let t2 = b.children[coluna].innerText.toLowerCase();
-        return ordemAsc ? t1.localeCompare(t2) : t2.localeCompare(t1);
+    rows.forEach(r => {
+        const base = (r.children[6].innerText || "").trim();
+        const alim = (r.children[5].innerText || "").trim();
+        if (!baseSelecionada || base === baseSelecionada) {
+            if (alim) alimentadores.add(alim);
+        }
     });
 
-    ordemAsc = !ordemAsc;
-    linhas.forEach(l => tbody.appendChild(l));
+    // repopula filtroAlim
+    selectAlim.innerHTML = `<option value="">Mostrar Todos</option>`;
+    Array.from(alimentadores).sort((a,b)=>a.localeCompare(b)).forEach(a => {
+        selectAlim.innerHTML += `<option value="${a}">${a}</option>`;
+    });
+
+    aplicarFiltros();
+});
+
+// quando mudar alimentador, aplicar filtros
+document.getElementById("filtroAlim").addEventListener("change", aplicarFiltros);
+
+// ------------------------------
+// ORDENAR TABELA (respeita filtros visíveis)
+// - detecta números e faz MAIOR->MENOR na primeira ordem
+// - se texto faz A->Z na primeira ordem
+// ------------------------------
+let lastSortedCol = null;
+let lastOrderAsc = null;
+
+function isNumericString(s) {
+    if (!s) return false;
+    // aceita números com pontos ou vírgulas decimais
+    const cleaned = String(s).trim().replace(/\./g,'').replace(/,/g,'.').replace(/[^\d\.\-]/g,'');
+    if (cleaned === "") return false;
+    return !isNaN(Number(cleaned));
+}
+
+function ordenarTabela(coluna, thElement) {
+    destacarTH(thElement);
+
+    const tbody = document.querySelector("#tabelaDT tbody");
+    // pega apenas linhas visíveis para determinar tipo e para ordenar
+    const todas = Array.from(tbody.querySelectorAll("tr"));
+    const visiveis = todas.filter(r => r.style.display !== "none");
+
+    // detectar tipo por amostra
+    const sample = visiveis.map(r => r.children[coluna].innerText.trim()).filter(v => v !== "");
+    const numericCount = sample.filter(v => isNumericString(v)).length;
+    const isNumeric = sample.length > 0 && numericCount >= Math.ceil(sample.length * 0.6);
+
+    // decide ordem inicial:
+    // se for nova coluna -> numeric: desc (maior->menor) i.e. orderAsc=false ; text: asc (A->Z) i.e. orderAsc=true
+    let orderAsc;
+    if (lastSortedCol === coluna) {
+        orderAsc = !lastOrderAsc; // alterna
+    } else {
+        orderAsc = !isNumeric; // numeric -> false (desc), text -> true (asc)
+    }
+
+    visiveis.sort((a,b) => {
+        let va = a.children[coluna].innerText.trim();
+        let vb = b.children[coluna].innerText.trim();
+
+        if (isNumeric && isNumericString(va) && isNumericString(vb)) {
+            const na = Number(va.replace(/\./g,'').replace(/,/g,'.').replace(/[^\d\.\-]/g,''))||0;
+            const nb = Number(vb.replace(/\./g,'').replace(/,/g,'.').replace(/[^\d\.\-]/g,''))||0;
+            return orderAsc ? na - nb : nb - na;
+        }
+
+        return orderAsc ? va.localeCompare(vb,'pt') : vb.localeCompare(va,'pt');
+    });
+
+    lastSortedCol = coluna;
+    lastOrderAsc = orderAsc;
+
+    // reappend: manter as linhas filtradas invisíveis na ordem original; para visíveis, append na ordem
+    visiveis.forEach(r => tbody.appendChild(r));
 }
 
 // ------------------------------
-// GERAR MENSAGEM
+// GERAR MENSAGEM (mantive endereço e inputs)
 // ------------------------------
 function gerarMensagem(botao) {
     let linha = botao.parentNode.parentNode;
     let col = linha.getElementsByTagName("td");
+
+    // campo DT/INCIDENCIA (col 10) é texto bruto (input maxlength=10)
+    let codigoInput = col[10].querySelector("input");
+    let codigo = codigoInput ? codigoInput.value.toUpperCase() : "";
+
+    let obsInput = col[11].querySelector("input");
+    let obs = obsInput ? obsInput.value : "";
 
     let msg =
 `*MODELO PARA ATENDER DT*
@@ -161,7 +303,9 @@ function gerarMensagem(botao) {
 *Base:* ${col[6].innerText}
 *CHI Total:* ${col[7].innerText}
 *Data última ocorrência:* ${col[8].innerText}
-*Endereço:* ${col[9].innerText}`;
+*Endereço:* ${col[9].innerText}
+*DT / Incidência:* ${codigo}
+*Observação:* ${obs}`;
 
     navigator.clipboard.writeText(msg);
 
@@ -180,7 +324,8 @@ document.getElementById("arquivoXLSX").addEventListener("change", function(e) {
         let data = new Uint8Array(event.target.result);
         let workbook = XLSX.read(data, {type: "array"});
         let sheet = workbook.Sheets[workbook.SheetNames[0]];
-        let json = XLSX.utils.sheet_to_json(sheet);
+        // defval:"" garante que células vazias aparecem como string vazia
+        let json = XLSX.utils.sheet_to_json(sheet, {defval: ""});
 
         preencherTabela(json);
     };
@@ -189,13 +334,14 @@ document.getElementById("arquivoXLSX").addEventListener("change", function(e) {
 });
 
 // ------------------------------
-// POPULAR TABELA
+// POPULAR TABELA (preenche filtros BASE e ALIMENTADOR iniciais)
 // ------------------------------
 function preencherTabela(dados) {
     let tbody = document.querySelector("#tabelaDT tbody");
     tbody.innerHTML = "";
 
     let valoresBase = new Set();
+    let valoresAlim = new Set();
 
     dados.forEach(item => {
         let tr = document.createElement("tr");
@@ -211,19 +357,32 @@ function preencherTabela(dados) {
             <td>${item["CHI TOTAL"] || ""}</td>
             <td>${item["DT. ULTIMA OCORRÊNCIA"] || ""}</td>
             <td>${enderecoToMaps(item.ENDEREÇO || "")}</td>
+            <td><input maxlength="10" class="codigo" placeholder="Ex: INSERIR"></td>
+            <td><input class="obs" placeholder="Obs"></td>
             <td><button onclick="gerarMensagem(this)">Gerar Msg</button></td>
         `;
 
         valoresBase.add(item.BASE);
+        if (item.ALIMENTADOR) valoresAlim.add(item.ALIMENTADOR);
         tbody.appendChild(tr);
     });
 
-    let select = document.getElementById("filtroBase");
-    select.innerHTML = `<option value="">Mostrar Todas</option>`;
-
-    valoresBase.forEach(base => {
-        if (base) select.innerHTML += `<option value="${base}">${base}</option>`;
+    // preencher filtro BASE
+    let selectBase = document.getElementById("filtroBase");
+    selectBase.innerHTML = `<option value="">Mostrar Todas</option>`;
+    Array.from(valoresBase).sort((a,b)=> (a||'').localeCompare(b||'')).forEach(base => {
+        if (base) selectBase.innerHTML += `<option value="${base}">${base}</option>`;
     });
+
+    // preencher filtro ALIM (todos inicialmente)
+    let selectAlim = document.getElementById("filtroAlim");
+    selectAlim.innerHTML = `<option value="">Mostrar Todos</option>`;
+    Array.from(valoresAlim).sort((a,b)=> (a||'').localeCompare(b||'')).forEach(al => {
+        selectAlim.innerHTML += `<option value="${al}">${al}</option>`;
+    });
+
+    // aplicar filtros iniciais (nenhum selecionado => mostra todos)
+    aplicarFiltros();
 }
 
 </script>
