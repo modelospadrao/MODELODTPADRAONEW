@@ -59,6 +59,12 @@
         background: #cc0000 !important;
     }
 
+    button.reset-btn {
+        background: #ff8c00 !important;
+        padding: 4px 8px;
+        font-size: 12px;
+    }
+
     tr.marcado {
         background: #fff0f0 !important;
     }
@@ -74,53 +80,96 @@
     }
 
     .caixa-container {
-    display: flex;
-    gap: 15px;
-    margin-bottom: 20px;
+        display: flex;
+        gap: 15px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
     }
 
-.caixa {
-    background: white;
-    padding: 12px;
-    width: 260px;
-    border-radius: 6px;
-    border: 2px solid #aaa;
-    box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+    .caixa {
+        background: white;
+        padding: 12px;
+        min-width: 260px;
+        border-radius: 6px;
+        border: 2px solid #aaa;
+        box-shadow: 0 3px 6px rgba(0,0,0,0.15);
     }
 
-.caixa select,
-.caixa input {
-    width: 100%;
-   }
+    .caixa select,
+    .caixa input {
+        width: 100%;
+    }
 
+    #botoesSE {
+        margin: 15px 0;
+        padding: 10px;
+        background: white;
+        border-radius: 6px;
+        border: 2px solid #aaa;
+        box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+    }
 
-#botoesSE {
-    margin: 15px 0;
-    padding: 10px;
-    background: white;
-    border-radius: 6px;
-    border: 2px solid #aaa;
-    box-shadow: 0 3px 6px rgba(0,0,0,0.15);
-   }
+    #botoesSE button {
+        margin: 3px;
+        padding: 5px 10px;
+        border: none;
+        background: #004c97;
+        color: white;
+        border-radius: 4px;
+        cursor: pointer;
+    }
 
-#botoesSE button {
-    margin: 3px;
-    padding: 5px 10px;
-    border: none;
-    background: #004c97;
-    color: white;
-    border-radius: 4px;
-    cursor: pointer;
-   }
+    #botoesSE button:hover {
+        background: #0065cc;
+    }
 
-#botoesSE button:hover {
-    background: #0065cc;
-   }
+    .acoes-sessao {
+        margin: 15px 0;
+        padding: 12px;
+        background: white;
+        border-radius: 6px;
+        border: 2px solid #28a745;
+        box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+    }
+
+    .acoes-sessao button {
+        margin: 3px;
+        padding: 6px 12px;
+    }
+
+    .btn-exportar {
+        background: #28a745 !important;
+    }
+
+    .btn-importar {
+        background: #17a2b8 !important;
+    }
+
+    .btn-limpar-filtros {
+        background: #ffc107 !important;
+        color: #000 !important;
+    }
+
+    .status-salvamento {
+        display: inline-block;
+        margin-left: 10px;
+        color: #28a745;
+        font-size: 12px;
+    }
 </style>
 </head>
 <body>
 
 <h2>Lista de DT com Filtro + Ordenação + WhatsApp</h2>
+
+<div class="acoes-sessao">
+    <b>💾 Gerenciar Sessão:</b><br>
+    <button class="btn-exportar" onclick="exportarSessao()">📥 Exportar Sessão</button>
+    <button class="btn-importar" onclick="document.getElementById('importarSessao').click()">📤 Importar Sessão</button>
+    <button class="btn-limpar-filtros" onclick="limparFiltros()">🔄 Limpar Filtros</button>
+    <input type="file" id="importarSessao" accept=".json" style="display:none;" onchange="importarSessao(this)">
+    <span class="status-salvamento" id="statusSalvamento"></span>
+</div>
 
 <div class="caixa-container">
 
@@ -145,7 +194,7 @@
 
 </div>
 
-<div id="botoesSE"><b>CONTAGEM DE REITERADAS POR SE:</b><br></div>
+<div id="botoesSE"><b>Filtrar por SE:</b><br></div>
 
 <table id="tabelaDT">
     <thead>
@@ -163,6 +212,7 @@
             <th onclick="ordenarTabela(10, this)">DT / Incidência</th>
             <th>Observação</th>
             <th>Ação</th>
+            <th>Reset</th>
         </tr>
     </thead>
     <tbody></tbody>
@@ -172,9 +222,174 @@
 
 <script>
 // ------------------------------
-// Destacar TH selecionado
+// VARIÁVEIS GLOBAIS
 // ------------------------------
 let ultimoTH = null;
+let lastSortedCol = null;
+let lastOrderAsc = null;
+let dadosOriginais = []; // Armazena os dados da planilha
+
+// ------------------------------
+// AUTO-SAVE: Salvar automaticamente no localStorage
+// ------------------------------
+function salvarSessaoAutomatica() {
+    const sessao = capturarEstadoSessao();
+    localStorage.setItem('dt_sessao_atual', JSON.stringify(sessao));
+    
+    const status = document.getElementById('statusSalvamento');
+    status.textContent = '✓ Salvo automaticamente';
+    setTimeout(() => status.textContent = '', 2000);
+}
+
+// ------------------------------
+// CAPTURAR ESTADO DA SESSÃO
+// ------------------------------
+function capturarEstadoSessao() {
+    const linhas = Array.from(document.querySelectorAll("#tabelaDT tbody tr"));
+    const dadosLinhas = linhas.map(linha => {
+        const cols = linha.children;
+        return {
+            dados: Array.from(cols).slice(0, 10).map(td => td.innerText),
+            codigo: cols[10].querySelector('input')?.value || '',
+            obs: cols[11].querySelector('input')?.value || '',
+            marcado: linha.classList.contains('marcado'),
+            gerado: cols[12].querySelector('button')?.classList.contains('gerado') || false
+        };
+    });
+
+    return {
+        timestamp: new Date().toISOString(),
+        dadosOriginais: dadosOriginais,
+        dadosLinhas: dadosLinhas,
+        filtros: {
+            base: document.getElementById('filtroBase').value,
+            alimentador: document.getElementById('filtroAlim').value
+        }
+    };
+}
+
+// ------------------------------
+// EXPORTAR SESSÃO (DOWNLOAD)
+// ------------------------------
+function exportarSessao() {
+    const sessao = capturarEstadoSessao();
+    const blob = new Blob([JSON.stringify(sessao, null, 2)], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `sessao_dt_${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    alert('✅ Sessão exportada com sucesso!');
+}
+
+// ------------------------------
+// IMPORTAR SESSÃO
+// ------------------------------
+function importarSessao(input) {
+    const arquivo = input.files[0];
+    if (!arquivo) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const sessao = JSON.parse(e.target.result);
+            restaurarSessao(sessao);
+            alert('✅ Sessão importada com sucesso!');
+        } catch (erro) {
+            alert('❌ Erro ao importar sessão: ' + erro.message);
+        }
+    };
+    reader.readAsText(arquivo);
+    input.value = ''; // Limpa o input
+}
+
+// ------------------------------
+// RESTAURAR SESSÃO
+// ------------------------------
+function restaurarSessao(sessao) {
+    dadosOriginais = sessao.dadosOriginais || [];
+    
+    const tbody = document.querySelector("#tabelaDT tbody");
+    tbody.innerHTML = "";
+
+    sessao.dadosLinhas.forEach(item => {
+        const tr = document.createElement("tr");
+        
+        let htmlColunas = '';
+        item.dados.forEach((dado, idx) => {
+            if (idx === 9) { // Endereço
+                htmlColunas += `<td>${dado}</td>`;
+            } else {
+                htmlColunas += `<td>${dado}</td>`;
+            }
+        });
+
+        tr.innerHTML = htmlColunas + `
+            <td><input maxlength="10" class="codigo" placeholder="Ex: INSERIR" value="${item.codigo}"></td>
+            <td><input class="obs" placeholder="Obs" value="${item.obs}"></td>
+            <td><button onclick="gerarMensagem(this)" ${item.gerado ? 'class="gerado"' : ''}>Gerar Msg</button></td>
+            <td><button class="reset-btn" onclick="resetarLinha(this)">↺</button></td>
+        `;
+
+        if (item.marcado) tr.classList.add('marcado');
+        tbody.appendChild(tr);
+    });
+
+    // Restaurar filtros
+    preencherFiltros();
+    document.getElementById('filtroBase').value = sessao.filtros.base || '';
+    atualizarAlimentadoresPorBase();
+    document.getElementById('filtroAlim').value = sessao.filtros.alimentador || '';
+    
+    aplicarFiltros();
+    atualizarBotoesSE();
+}
+
+// ------------------------------
+// CARREGAR SESSÃO AUTOMATICAMENTE AO ABRIR
+// ------------------------------
+window.addEventListener('DOMContentLoaded', function() {
+    const sessaoSalva = localStorage.getItem('dt_sessao_atual');
+    if (sessaoSalva) {
+        try {
+            const sessao = JSON.parse(sessaoSalva);
+            restaurarSessao(sessao);
+            console.log('✅ Sessão anterior restaurada automaticamente');
+        } catch (erro) {
+            console.error('Erro ao restaurar sessão:', erro);
+        }
+    }
+});
+
+// ------------------------------
+// LIMPAR APENAS OS FILTROS
+// ------------------------------
+function limparFiltros() {
+    document.getElementById('filtroBase').value = '';
+    document.getElementById('filtroAlim').value = '';
+    atualizarAlimentadoresPorBase();
+    aplicarFiltros();
+    alert('✅ Filtros limpos!');
+}
+
+// ------------------------------
+// RESETAR LINHA (desfaz marcação)
+// ------------------------------
+function resetarLinha(botaoReset) {
+    const linha = botaoReset.parentNode.parentNode;
+    const botaoGerar = linha.querySelector('td:nth-child(13) button');
+    
+    linha.classList.remove('marcado');
+    botaoGerar.classList.remove('gerado');
+    
+    salvarSessaoAutomatica();
+}
+
+// ------------------------------
+// Destacar TH selecionado
+// ------------------------------
 function destacarTH(th) {
     if (ultimoTH) ultimoTH.classList.remove("selected");
     if (th) th.classList.add("selected");
@@ -182,20 +397,44 @@ function destacarTH(th) {
 }
 
 // ------------------------------
-// Converter coordenada → link Google Maps (mantive botão)
+// Converter data serial do Excel para DD/MM/AAAA
 // ------------------------------
-function enderecoToMaps(txt) {
-    if (!txt) return "";
-    if (!txt.includes(",")) return txt;
-    let c = txt.split(",");
-    if (c.length === 2) {
-        return `<button onclick="window.open('https://www.google.com/maps?q=${c[0].trim()},${c[1].trim()}')">Mapa</button>`;
+function formatarData(valor) {
+    if (!valor) return "";
+    
+    // Se já está em formato de texto (DD/MM/AAAA), retorna
+    if (typeof valor === 'string' && valor.includes('/')) {
+        return valor;
     }
-    return txt;
+    
+    // Se é número serial do Excel
+    if (typeof valor === 'number') {
+        // Excel serializa datas como dias desde 30/12/1899
+        const dataExcel = new Date((valor - 25569) * 86400 * 1000);
+        const dia = String(dataExcel.getDate()).padStart(2, '0');
+        const mes = String(dataExcel.getMonth() + 1).padStart(2, '0');
+        const ano = dataExcel.getFullYear();
+        return `${dia}/${mes}/${ano}`;
+    }
+    
+    // Tenta converter outros formatos
+    try {
+        const data = new Date(valor);
+        if (!isNaN(data.getTime())) {
+            const dia = String(data.getDate()).padStart(2, '0');
+            const mes = String(data.getMonth() + 1).padStart(2, '0');
+            const ano = data.getFullYear();
+            return `${dia}/${mes}/${ano}`;
+        }
+    } catch (e) {
+        return valor;
+    }
+    
+    return valor;
 }
 
 // ------------------------------
-// FILTROS (BASE + ALIMENTADOR) — UMA FUNÇÃO QUE APLICA AMBOS
+// FILTROS (BASE + ALIMENTADOR)
 // ------------------------------
 function aplicarFiltros() {
     const filtroBase = document.getElementById("filtroBase").value.toUpperCase();
@@ -212,19 +451,16 @@ function aplicarFiltros() {
         linha.style.display = (condBase && condAlim) ? "" : "none";
     });
 
-    // Atualiza os botões SE após aplicar os filtros de base e alimentador
     atualizarBotoesSE();
 }
 
-
 // ------------------------------
-// Quando mudar a BASE, atualiza os alimentadores disponíveis
+// Atualizar alimentadores quando BASE muda
 // ------------------------------
-document.getElementById("filtroBase").addEventListener("change", function() {
-    const baseSelecionada = this.value;
+function atualizarAlimentadoresPorBase() {
+    const baseSelecionada = document.getElementById("filtroBase").value;
     const selectAlim = document.getElementById("filtroAlim");
 
-    // recolhe alimentadores da tabela (base já carregada)
     const rows = Array.from(document.querySelectorAll("#tabelaDT tbody tr"));
     const alimentadores = new Set();
 
@@ -236,29 +472,24 @@ document.getElementById("filtroBase").addEventListener("change", function() {
         }
     });
 
-    // repopula filtroAlim
     selectAlim.innerHTML = `<option value="">Mostrar Todos</option>`;
     Array.from(alimentadores).sort((a,b)=>a.localeCompare(b)).forEach(a => {
         selectAlim.innerHTML += `<option value="${a}">${a}</option>`;
     });
+}
 
+document.getElementById("filtroBase").addEventListener("change", function() {
+    atualizarAlimentadoresPorBase();
     aplicarFiltros();
 });
 
-// quando mudar alimentador, aplicar filtros
 document.getElementById("filtroAlim").addEventListener("change", aplicarFiltros);
 
 // ------------------------------
-// ORDENAR TABELA (respeita filtros visíveis)
-// - detecta números e faz MAIOR->MENOR na primeira ordem
-// - se texto faz A->Z na primeira ordem
+// ORDENAR TABELA
 // ------------------------------
-let lastSortedCol = null;
-let lastOrderAsc = null;
-
 function isNumericString(s) {
     if (!s) return false;
-    // aceita números com pontos ou vírgulas decimais
     const cleaned = String(s).trim().replace(/\./g,'').replace(/,/g,'.').replace(/[^\d\.\-]/g,'');
     if (cleaned === "") return false;
     return !isNaN(Number(cleaned));
@@ -268,22 +499,18 @@ function ordenarTabela(coluna, thElement) {
     destacarTH(thElement);
 
     const tbody = document.querySelector("#tabelaDT tbody");
-    // pega apenas linhas visíveis para determinar tipo e para ordenar
     const todas = Array.from(tbody.querySelectorAll("tr"));
     const visiveis = todas.filter(r => r.style.display !== "none");
 
-    // detectar tipo por amostra
     const sample = visiveis.map(r => r.children[coluna].innerText.trim()).filter(v => v !== "");
     const numericCount = sample.filter(v => isNumericString(v)).length;
     const isNumeric = sample.length > 0 && numericCount >= Math.ceil(sample.length * 0.6);
 
-    // decide ordem inicial:
-    // se for nova coluna -> numeric: desc (maior->menor) i.e. orderAsc=false ; text: asc (A->Z) i.e. orderAsc=true
     let orderAsc;
     if (lastSortedCol === coluna) {
-        orderAsc = !lastOrderAsc; // alterna
+        orderAsc = !lastOrderAsc;
     } else {
-        orderAsc = !isNumeric; // numeric -> false (desc), text -> true (asc)
+        orderAsc = !isNumeric;
     }
 
     visiveis.sort((a,b) => {
@@ -302,18 +529,16 @@ function ordenarTabela(coluna, thElement) {
     lastSortedCol = coluna;
     lastOrderAsc = orderAsc;
 
-    // reappend: manter as linhas filtradas invisíveis na ordem original; para visíveis, append na ordem
     visiveis.forEach(r => tbody.appendChild(r));
 }
 
 // ------------------------------
-// GERAR MENSAGEM (mantive endereço e inputs)
+// GERAR MENSAGEM
 // ------------------------------
 function gerarMensagem(botao) {
     let linha = botao.parentNode.parentNode;
     let col = linha.getElementsByTagName("td");
 
-    // campo DT/INCIDENCIA (col 10) é texto bruto (input maxlength=10)
     let codigoInput = col[10].querySelector("input");
     let codigo = codigoInput ? codigoInput.value.toUpperCase() : "";
 
@@ -340,6 +565,8 @@ function gerarMensagem(botao) {
 
     linha.classList.add("marcado");
     botao.classList.add("gerado");
+    
+    salvarSessaoAutomatica();
 }
 
 // ------------------------------
@@ -353,27 +580,34 @@ document.getElementById("arquivoXLSX").addEventListener("change", function(e) {
         let data = new Uint8Array(event.target.result);
         let workbook = XLSX.read(data, {type: "array"});
         let sheet = workbook.Sheets[workbook.SheetNames[0]];
-        // defval:"" garante que células vazias aparecem como string vazia
         let json = XLSX.utils.sheet_to_json(sheet, {defval: ""});
 
+        dadosOriginais = json;
         preencherTabela(json);
+        salvarSessaoAutomatica();
     };
 
     reader.readAsArrayBuffer(arquivo);
 });
 
 // ------------------------------
-// POPULAR TABELA (preenche filtros BASE e ALIMENTADOR iniciais)
+// POPULAR TABELA
 // ------------------------------
 function preencherTabela(dados) {
     let tbody = document.querySelector("#tabelaDT tbody");
     tbody.innerHTML = "";
 
-    let valoresBase = new Set();
-    let valoresAlim = new Set();
-
     dados.forEach(item => {
         let tr = document.createElement("tr");
+        
+        // Processa endereço para coordenadas
+        let enderecoHTML = item.ENDEREÇO || "";
+        if (enderecoHTML && enderecoHTML.includes(",")) {
+            let coords = enderecoHTML.split(",");
+            if (coords.length === 2) {
+                enderecoHTML = `<button onclick="window.open('https://www.google.com/maps?q=${coords[0].trim()},${coords[1].trim()}')">Mapa</button>`;
+            }
+        }
 
         tr.innerHTML = `
             <td>${item.RANKING || ""}</td>
@@ -384,63 +618,75 @@ function preencherTabela(dados) {
             <td>${item.ALIMENTADOR || ""}</td>
             <td>${item.BASE || ""}</td>
             <td>${item["CHI TOTAL"] || ""}</td>
-            <td>${item["DT. ULTIMA OCORRÊNCIA"] || ""}</td>
-            <td>${enderecoToMaps(item.ENDEREÇO || "")}</td>
-            <td><input maxlength="10" class="codigo" placeholder="Ex: INSERIR"></td>
-            <td><input class="obs" placeholder="Obs"></td>
+            <td>${formatarData(item["DT. ULTIMA OCORRÊNCIA"] || "")}</td>
+            <td>${enderecoHTML}</td>
+            <td><input maxlength="10" class="codigo" placeholder="Ex: INSERIR" oninput="salvarSessaoAutomatica()"></td>
+            <td><input class="obs" placeholder="Obs" oninput="salvarSessaoAutomatica()"></td>
             <td><button onclick="gerarMensagem(this)">Gerar Msg</button></td>
+            <td><button class="reset-btn" onclick="resetarLinha(this)">↺</button></td>
         `;
 
-        valoresBase.add(item.BASE);
-        if (item.ALIMENTADOR) valoresAlim.add(item.ALIMENTADOR);
         tbody.appendChild(tr);
     });
 
-    // Preencher filtro BASE
+    preencherFiltros();
+    aplicarFiltros();
+    atualizarBotoesSE();
+}
+
+// ------------------------------
+// PREENCHER FILTROS
+// ------------------------------
+function preencherFiltros() {
+    const rows = Array.from(document.querySelectorAll("#tabelaDT tbody tr"));
+    let valoresBase = new Set();
+    let valoresAlim = new Set();
+
+    rows.forEach(r => {
+        valoresBase.add(r.children[6].innerText.trim());
+        valoresAlim.add(r.children[5].innerText.trim());
+    });
+
     let selectBase = document.getElementById("filtroBase");
+    const baseAtual = selectBase.value;
     selectBase.innerHTML = `<option value="">Mostrar Todas</option>`;
     Array.from(valoresBase).sort((a,b)=> (a||'').localeCompare(b||'')).forEach(base => {
         if (base) selectBase.innerHTML += `<option value="${base}">${base}</option>`;
     });
+    selectBase.value = baseAtual;
 
-    // Preencher filtro ALIM (todos inicialmente)
     let selectAlim = document.getElementById("filtroAlim");
+    const alimAtual = selectAlim.value;
     selectAlim.innerHTML = `<option value="">Mostrar Todos</option>`;
     Array.from(valoresAlim).sort((a,b)=> (a||'').localeCompare(b||'')).forEach(al => {
-        selectAlim.innerHTML += `<option value="${al}">${al}</option>`;
+        if (al) selectAlim.innerHTML += `<option value="${al}">${al}</option>`;
     });
-
-    // Aplicar filtros iniciais
-    aplicarFiltros();
-
-    // Atualiza os botões "SE"
-    atualizarBotoesSE();
+    selectAlim.value = alimAtual;
 }
 
-
+// ------------------------------
+// ATUALIZAR BOTÕES SE
+// ------------------------------
 function atualizarBotoesSE() {
     let botoesDiv = document.getElementById("botoesSE");
     botoesDiv.innerHTML = "<b>Filtrar por SE:</b><br>";
 
-    // Pega todas as linhas visíveis na tabela
     let linhas = document.querySelectorAll("#tabelaDT tbody tr");
     let contagem = {};
 
-    // Conta os "SE" para as linhas visíveis
     linhas.forEach(l => {
-        if (l.style.display !== "none") { // Só conta as linhas visíveis
-            let se = l.children[4].innerText.trim(); // Coluna SE
+        if (l.style.display !== "none") {
+            let se = l.children[4].innerText.trim();
             if (se) contagem[se] = (contagem[se] || 0) + 1;
         }
     });
 
-    // Ordena os SEs e cria os botões dinamicamente
     Object.keys(contagem)
-        .sort() // Ordena alfabeticamente os SEs
+        .sort()
         .forEach(se => {
             let btn = document.createElement("button");
             btn.innerText = `${se} (${contagem[se]})`;
-            btn.onclick = () => filtrarPorSE(se); // Filtro por SE ao clicar
+            btn.onclick = () => filtrarPorSE(se);
             botoesDiv.appendChild(btn);
         });
 }
@@ -448,23 +694,12 @@ function atualizarBotoesSE() {
 function filtrarPorSE(seSelecionado) {
     let linhas = document.querySelectorAll("#tabelaDT tbody tr");
 
-    // Filtra as linhas com base no "SE" selecionado
     linhas.forEach(linha => {
         let se = linha.children[4].innerText.trim();
         linha.style.display = (se === seSelecionado) ? "" : "none";
     });
 
-    atualizarBotoesSE(); // Atualiza os botões após filtrar
-}
-function formatarData(data) {
-    // Verifica se a data é válida
-    if (!data) return "";
-    let date = new Date(data);
-    if (isNaN(date.getTime())) return ""; // Se a data for inválida, retorna vazio
-    let day = ("0" + date.getDate()).slice(-2); // Garante que o dia tenha dois dígitos
-    let month = ("0" + (date.getMonth() + 1)).slice(-2); // Garante que o mês tenha dois dígitos
-    let year = date.getFullYear(); // Ano de 4 dígitos
-    return `${day}/${month}/${year}`; // Retorna no formato "DD/MM/YYYY"
+    atualizarBotoesSE();
 }
 </script>
 
