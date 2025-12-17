@@ -325,13 +325,15 @@
         background: transparent;
         padding: 0;
         margin-left: auto;
+        margin-right: 63px;
+        margin-bottom: 11px;
+        margin-top: 11px;
         border-radius: 0;
-        border: none;
+        border: 1px;
         box-shadow: none;
         display: flex;
         flex-direction: column;
         min-width: 0;
-        max-width: 600px;
     }
 
     .grafico-titulo {
@@ -340,13 +342,24 @@
 
     .grafico-metricas {
         display: flex;
-        flex-wrap: nowrap;
-        flex-direction: row-reverse;
-        gap: 6px;
-        height: 100%;
         align-items: flex-end;
-        justify-content: flex-end;
+        justify-content: space-between; /* empurra esquerda e direita */
+        padding-left: 8px;              /* margem esquerda */
+        padding-right: 8px;             /* margem direita */
     }
+
+    .grupo-esquerda {
+        display: flex;
+        align-items: flex-end;
+        gap: 6px;
+    }
+
+    .grupo-direita {
+        display: flex;
+        align-items: flex-end;
+        gap: 6px;
+    }
+
 
     .metrica-item {
         flex: 0 0 auto;
@@ -360,30 +373,45 @@
         border-radius: 6px;
         background: #f8f9fa;
         position: relative;
+        box-shadow: 0 4px 0 rgb(0, 0, 0);
+        border: 1px solid #333;
     }
 
     .metrica-numero {
         font-size: 16px;
         font-weight: bold;
-        margin-bottom: 3px;
+        margin-bottom: 5px;
         z-index: 2;
     }
 
     .metrica-barra {
-        width: 100%;
-        max-width: 40px;
-        border-radius: 6px 6px 0 0;
-        margin-bottom: 3px;
-        transition: height 0.3s ease;
-        min-height: 18px;
+    width: 100%;
+    max-width: 50px;
+    border-radius: 6px 6px 0 0;
+    transition: height 0.3s ease;
+    height: 0; /* controlado por JS */
     }
 
     .metrica-label {
-        font-size: 9px;
-        color: #666;
-        text-align: center;
-        line-height: 1.1;
-        z-index: 2;
+    font-size: 12px;
+    color: #666;
+    text-align: center;
+    line-height: 1.1;
+
+    min-height: 28px;   /* espaço para até 2 linhas */
+    margin-top: 6px;    /* garante respiro igual para todos */
+
+    z-index: 2;
+    }
+    .metrica-item {
+    height: 140px; /* todas iguais */
+    width: 100%;
+    }
+    .metrica-barra-container {
+    height: 70px;          /* área fixa da barra */
+    width: 100%;
+    display: flex;
+    align-items: flex-end; /* barra cresce de baixo */
     }
 
     /* Cores das barras */
@@ -416,10 +444,11 @@
     #botoesBASE,
     #botoesSE,
     #botoesALIM {
+        margin-top: 11px;
         background: #ffffff;
         padding: 8px;
         border-radius: 20px;
-        border: 3px solid #333;
+        border: 1px solid #333;
         box-shadow: 7px 6px 5px rgba(0,0,0,0.3);
         text-align: center;
         min-width: 200px;
@@ -459,8 +488,8 @@
     #botoesBASE button,
     #botoesSE button,
     #botoesALIM button {
-        margin: 3px;
-        padding: 6px 10px;
+        margin: 1px;
+        padding: 9px 10px;
         border: none;
         background-color: #444;
         color: #fff;
@@ -501,17 +530,30 @@
     #botoesBASE button.limpar,
     #botoesSE button.limpar,
     #botoesALIM button.limpar {
-        background-color: #ff8c00 !important;
-        color: #000 !important;
-        font-weight: bold;
         position: absolute;
-        top: 5px;
-        left: 5px;
-        padding: 4px 10px;
-        font-size: 11px;
-        border-radius: 12px 12px 0 0;
-        margin: 0;
+        top: 6px;
+        right: 8px;
+
+        width: 26px;
+        height: 26px;
+
+        background-color: #e63946 !important;
+        color: #fff !important;
+
+        border-radius: 50%;   /* 🔴 deixa redondo */
+        border: none;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        font-size: 14px;
+        font-weight: bold;
+        cursor: pointer;
+
+        box-shadow: 0 3px 6px rgba(0,0,0,0.3);
     }
+
      .container-botoes-menu {
     display: flex;
     justify-content: right; /* centraliza os botões */
@@ -611,69 +653,82 @@
         </div>
     </div>
 
-    <!-- GRÁFICO DE CONTAGEM -->
-    <div class="grafico-container">
-        <div class="grafico-metricas">
-            <div class="metrica-item metrica-total">
-                <span class="metrica-numero" id="metricaTotal">0</span>
-                <div class="metrica-barra" style="height: 80px;"></div>
-                <span class="metrica-label">Total<br>Filtrado</span>
-            </div>
-            <div class="metrica-item metrica-pendente">
-                <span class="metrica-numero" id="metricaPendente">0</span>
-                <div class="metrica-barra" style="height: 45px;"></div>
-                <span class="metrica-label">Pendentes</span>
-            </div>
-            <div class="metrica-item metrica-criada">
-                <span class="metrica-numero" id="metricaCriada">0</span>
-                <div class="metrica-barra" style="height: 65px;"></div>
-                <span class="metrica-label">DTs<br>Criadas</span>
-            </div>
-            <div class="metrica-item metrica-realizado">
-                <span class="metrica-numero" id="metricaRealizado">0</span>
-                <div class="metrica-barra" style="height: 55px;"></div>
-                <span class="metrica-label">Realizados</span>
-            </div>
-            <div class="metrica-item metrica-nao-realizado">
-                <span class="metrica-numero" id="metricaNaoRealizado">0</span>
-                <div class="metrica-barra" style="height: 30px;"></div>
-                <span class="metrica-label">Não<br>Realizados</span>
-            </div>
-            <div class="metrica-item metrica-reprogramar">
-                <span class="metrica-numero" id="metricaReprogramar">0</span>
-                <div class="metrica-barra" style="height: 25px;"></div>
-                <span class="metrica-label">Reprogramar</span>
-            </div>
+<div class="grafico-container">
+    <div class="grafico-metricas">
+
+        <!-- GRUPO ESQUERDA -->
+        <div class="grupo-esquerda">
             <div class="metrica-item metrica-inspetor">
                 <span class="metrica-numero" id="metricaInspetor">0</span>
                 <div class="metrica-barra" style="height: 18px;"></div>
                 <span class="metrica-label">Enviar<br>Inspetor</span>
             </div>
+
+            <div class="metrica-item metrica-reprogramar">
+                <span class="metrica-numero" id="metricaReprogramar">0</span>
+                <div class="metrica-barra" style="height: 25px;"></div>
+                <span class="metrica-label">Reprogramar</span>
+            </div>
+
+            <div class="metrica-item metrica-realizado">
+                <span class="metrica-numero" id="metricaRealizado">0</span>
+                <div class="metrica-barra" style="height: 55px;"></div>
+                <span class="metrica-label">Realizados</span>
+            </div>
+
+            <div class="metrica-item metrica-nao-realizado">
+                <span class="metrica-numero" id="metricaNaoRealizado">0</span>
+                <div class="metrica-barra" style="height: 30px;"></div>
+                <span class="metrica-label">Não<br>Realizados</span>
+            </div>
         </div>
+
+        <!-- GRUPO DIREITA -->
+        <div class="grupo-direita">
+            <div class="metrica-item metrica-criada">
+                <span class="metrica-numero" id="metricaCriada">0</span>
+                <div class="metrica-barra" style="height: 65px;"></div>
+                <span class="metrica-label">DTs<br>Criadas</span>
+            </div>
+
+            <div class="metrica-item metrica-pendente">
+                <span class="metrica-numero" id="metricaPendente">0</span>
+                <div class="metrica-barra" style="height: 45px;"></div>
+                <span class="metrica-label">Pendentes</span>
+            </div>
+
+            <div class="metrica-item metrica-total">
+                <span class="metrica-numero" id="metricaTotal">0</span>
+                <div class="metrica-barra" style="height: 80px;"></div>
+                <span class="metrica-label">Total<br>Filtrado</span>
+            </div>
+        </div>
+
     </div>
 </div>
+
 
 <div class="table-wrapper">
     <table id="tabelaDT">
         <thead>
             <tr>
-                <th onclick="ordenarTabela(0, this)">Ranking</th>
-                <th onclick="ordenarTabela(1, this)">Tipo</th>
-                <th onclick="ordenarTabela(2, this)">Equipamento</th>
-                <th onclick="ordenarTabela(3, this)">Reiteradas</th>
+                <th onclick="ordenarTabela(0, this)">RANKING</th>
+                <th onclick="ordenarTabela(1, this)">TIPO</th>
+                <th onclick="ordenarTabela(2, this)">EQUIPAMENTO</th>
+                <th onclick="ordenarTabela(3, this)">QTD.</th>
                 <th onclick="ordenarTabela(4, this)">SE</th>
-                <th onclick="ordenarTabela(5, this)">Alimentador</th>
-                <th onclick="ordenarTabela(6, this)">Base</th>
+                <th onclick="ordenarTabela(5, this)">ALIM:</th>
+                <th onclick="ordenarTabela(6, this)">BASE</th>
                 <th onclick="ordenarTabela(7, this)">CHI</th>
-                <th onclick="ordenarTabela(8, this)">Data</th>
-                <th onclick="ordenarTabela(9, this)">Endereço</th>
-                <th onclick="ordenarTabela(10, this)">DT / Inc</th>
-                <th onclick="ordenarTabela(11, this)">Observação</th>
-                <th onclick="ordenarTabela(12, this)">Lead da Equipe</th>
-                <th onclick="ordenarTabela(13, this)">Retorno</th>
-                <th onclick="ordenarTabela(14, this)">Ação</th>
-                <th onclick="ordenarTabela(15, this)">Status</th>
-                <th>Reset</th>
+                <th onclick="ordenarTabela(8, this)">DATA</th>
+                <th onclick="ordenarTabela(9, this)">GPS</th>
+                <th onclick="ordenarTabela(10, this)">DT / INC</th>
+                <th onclick="ordenarTabela(11, this)">OBS:</th>
+                <th onclick="ordenarTabela(12, this)">LEAD</th>
+                <th onclick="ordenarTabela(13, this)">RETORNO</th>
+                <th onclick="ordenarTabela(14, this)">AÇÃO</th>
+                <th onclick="ordenarTabela(15, this)">STATUS</th>
+                <th>RESET</th>
             </tr>
         </thead>
         <tbody></tbody>
