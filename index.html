@@ -119,32 +119,51 @@
     }
 
     button.reset-btn {
-        background-color: #ff8c00 !important;
-        padding: 8px 16px;
-        font-size: 14px;
+        margin: 3px;
+        padding: 6px 10px;
+        border: none;
+        background-color: #444;
+        color: #fff;
+        border-radius: 18px;
+        cursor: pointer;
+        font-size: 15px;
+        box-shadow: 0 4px 0 rgba(0,0,0,0.1);
+        transition: transform 0.2s, box-shadow 0.2s;
     }
+
 
     tr.marcado {
         background: #fff0f0 !important;
     }
 
     input.codigo, input.lead, input.retorno {
-        width: 110px;
-        text-transform: uppercase;
-        font-weight: bold;
-        padding: 8px;
-        border-radius: 8px;
-        border: 2px solid #ccc;
+        width: 120px;
+        margin: 3px;
+        padding: 6px 10px;
+        border: none;
+        background-color: #444;
+        color: #fff;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 15px;
+        box-shadow: 0 4px 0 rgba(0,0,0,0.1);
+        transition: transform 0.2s, box-shadow 0.2s;
     }
 
     input.obs, input.retorno {
-        width: 60px;
-        padding: 8px;
-        border-radius: 8px;
-        border: 2px solid #ccc;
+        width: 30px;
+        margin: 3px;
+        padding: 6px 10px;
+        border: none;
+        background-color: #444;
+        color: #fff;
+        border-radius: 6px;
         cursor: pointer;
-        text-align: center;
+        font-size: 15px;
+        box-shadow: 0 4px 0 rgba(0,0,0,0.1);
+        transition: transform 0.2s, box-shadow 0.2s;
     }
+
 
     .popup {
         display: none;
@@ -165,9 +184,9 @@
     }
 
     .popup textarea {
-        width: 100%;
+        width: 90%;
         min-height: 100px;
-        padding: 10px;
+        padding: 9px;
         margin: 10px 0;
         border-radius: 8px;
         border: 2px solid #666;
@@ -238,25 +257,60 @@
     }
 
     .btn-exportar {
-        background-color: green !important;
+        margin: 2px;
+        padding: 6px 10px;
+        border: none;
+        background-color: #444;
+        color: #fff;
+        border-radius: 18px;
+        cursor: pointer;
+        font-size: 15px;
+        box-shadow: 0 4px 0 rgba(0,0,0,0.1);
+        transition: transform 0.2s, box-shadow 0.2s;
     }
 
     .btn-importar {
-        background-color: #007bff !important;
+        margin: 2px;
+        padding: 6px 10px;
+        border: none;
+        background-color: #444;
+        color: #fff;
+        border-radius: 18px;
+        cursor: pointer;
+        font-size: 15px;
+        box-shadow: 0 4px 0 rgba(0,0,0,0.1);
+        transition: transform 0.2s, box-shadow 0.2s;
     }
 
     .btn-limpar-filtros {
-        background-color: #ffc107 !important;
-        color: #000 !important;
+        margin: 2px;
+        padding: 6px 10px;
+        border: none;
+        background-color: #444;
+        color: #fff;
+        border-radius: 18px;
+        cursor: pointer;
+        font-size: 15px;
+        box-shadow: 0 4px 0 rgba(0,0,0,0.1);
+        transition: transform 0.2s, box-shadow 0.2s;
     }
+
 
     .btn-limpar-tudo {
         background-color: red !important;
     }
 
     .btn-criar-rota {
-        background-color: #9C27B0 !important;
-        animation: pulse 2s infinite;
+        margin: 2px;
+        padding: 6px 10px;
+        border: none;
+        background-color: rgb(250, 185, 0);
+        color: #000000;
+        border-radius: 18px;
+        cursor: pointer;
+        font-size: 15px;
+        box-shadow: 0 4px 0 rgba(0,0,0,0.1);
+        transition: transform 0.2s, box-shadow 0.2s;
     }
 
     @keyframes pulse {
@@ -265,79 +319,91 @@
     }
 
 
-    /* GRÁFICO DE CONTAGEM */
+    /* GRÁFICO DE CONTAGEM - SEM CAIXA, COMPACTO À DIREITA */
     .grafico-container {
-        background: white;
-        padding: 15px;
-        border-radius: 8px;
-        border: 3px solid #333;
-        box-shadow: 7px 6px 5px rgba(0,0,0,0.3);
-        margin: 10px 0;
+        flex: 0 0 auto;
+        background: transparent;
+        padding: 0;
+        margin-left: auto;
+        border-radius: 0;
+        border: none;
+        box-shadow: none;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        max-width: 600px;
     }
 
     .grafico-titulo {
-        font-size: 16px;
-        font-weight: bold;
-        margin-bottom: 10px;
-        text-align: center;
-        color: #004c97;
+        display: none;
     }
 
     .grafico-metricas {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-        gap: 10px;
+        display: flex;
+        flex-wrap: nowrap;
+        flex-direction: row-reverse;
+        gap: 6px;
+        height: 100%;
+        align-items: flex-end;
+        justify-content: flex-end;
     }
 
     .metrica-item {
-        padding: 10px;
+        flex: 0 0 auto;
+        min-width: 55px;
+        max-width: 75px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-end;
+        padding: 4px;
         border-radius: 6px;
-        text-align: center;
-        border: 2px solid #ddd;
+        background: #f8f9fa;
+        position: relative;
     }
 
     .metrica-numero {
-        font-size: 24px;
+        font-size: 16px;
         font-weight: bold;
-        display: block;
+        margin-bottom: 3px;
+        z-index: 2;
+    }
+
+    .metrica-barra {
+        width: 100%;
+        max-width: 40px;
+        border-radius: 6px 6px 0 0;
+        margin-bottom: 3px;
+        transition: height 0.3s ease;
+        min-height: 18px;
     }
 
     .metrica-label {
-        font-size: 12px;
+        font-size: 9px;
         color: #666;
-        margin-top: 5px;
-        display: block;
+        text-align: center;
+        line-height: 1.1;
+        z-index: 2;
     }
 
-    .metrica-total { background: #e3f2fd; border-color: #2196F3; }
+    /* Cores das barras */
+    .metrica-total .metrica-barra { background: #2196F3; }
+    .metrica-pendente .metrica-barra { background: #FF9800; }
+    .metrica-criada .metrica-barra { background: #4CAF50; }
+    .metrica-realizado .metrica-barra { background: #2E7D32; }
+    .metrica-nao-realizado .metrica-barra { background: #f44336; }
+    .metrica-reprogramar .metrica-barra { background: #9E9E9E; }
+    .metrica-inspetor .metrica-barra { background: #263238; }
+
+    /* Cores dos números */
     .metrica-total .metrica-numero { color: #2196F3; }
-
-    .metrica-pendente { background: #fff3e0; border-color: #FF9800; }
     .metrica-pendente .metrica-numero { color: #FF9800; }
-
-    .metrica-criada { background: #e8f5e9; border-color: #4CAF50; }
     .metrica-criada .metrica-numero { color: #4CAF50; }
-
-    .metrica-realizado { background: #c8e6c9; border-color: #2E7D32; }
     .metrica-realizado .metrica-numero { color: #2E7D32; }
-
-    .metrica-nao-realizado { background: #ffebee; border-color: #f44336; }
     .metrica-nao-realizado .metrica-numero { color: #f44336; }
-
-    .metrica-reprogramar { background: #f5f5f5; border-color: #9E9E9E; }
     .metrica-reprogramar .metrica-numero { color: #9E9E9E; }
+    .metrica-inspetor .metrica-numero { color: #263238; }
 
-    .metrica-inspetor { background: #263238; border-color: #000; }
-    .metrica-inspetor .metrica-numero { color: #fff; }
-
-    button.reprogramar {
-        background-color: #9E9E9E !important;
-    }
-
-    button.enviar-inspetor {
-        background-color: #000 !important;
-        color: white !important;
-    }
 
     .status-salvamento {
         display: inline-block;
@@ -446,10 +512,79 @@
         border-radius: 12px 12px 0 0;
         margin: 0;
     }
+     .container-botoes-menu {
+    display: flex;
+    justify-content: right; /* centraliza os botões */
+    align-items: center;
+    }
+
+    .input-file {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    /* ESCONDE o input feio */
+    .input-file input[type="file"] {
+        display: none;
+    }
+
+    .btn-file-input {
+        padding: 8px 18px;
+        background: linear-gradient(135deg, #444, #222);
+        color: #fff;
+        border-radius: 20px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+        transition: all 0.25s ease;
+    }
+
+    .btn-file-input:hover {
+        transform: translateY(-2px);
+        background: linear-gradient(135deg, #555, #333);
+    }
+
+    .file-name {
+        font-size: 13px;
+        color: #ccc;
+        font-style: italic;
+        max-width: 220px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
 </style>
 </head>
 <body>
 
+<h2 style="text-align: center; font-size: 25px; font-weight: bold; color: #e63946;">MODELO CRIAR DT INSPEÇÕES REINTERADAS E RNT</h2>
+  <h2 style="text-align: center; font-size: 21px; font-weight: bold; color: #000;">(Versão 5.0)</h2>
+
+<div class="input-file">
+    <label for="arquivoXLSX" class="btn-file-input">
+        📂 Abrir arquivo
+    </label>
+    <span class="file-name" id="nomeArquivo">Nenhum arquivo selecionado</span>
+
+    <input type="file" id="arquivoXLSX" accept=".xlsx" onchange="mostrarNomeArquivo(this)">
+</div>
+
+   
+<div class="container-botoes-menu">    
+    <button class="btn-exportar" onclick="exportarSessao()">📥 Exportar</button>
+        <button class="btn-importar" onclick="document.getElementById('importarSessao').click()">📤 Importar</button>
+        <button class="btn-limpar-filtros" onclick="limparFiltros()">🔄 Limpar Filtros</button>
+        <button class="btn-criar-rota" id="btnCriarRota" onclick="criarRotaMapa()" style="display:none;">🗺️ Criar Rota no Mapa</button>
+        <input type="file" id="importarSessao" accept=".json" style="display:none;" onchange="importarSessao(this)">
+        <span class="status-salvamento" id="statusSalvamento"></span>
+</div>
+
+
+   
+    
 <div id="popupOverlay" class="popup-overlay" onclick="fecharPopup()"></div>
 <div id="popupTexto" class="popup">
     <h3 id="popupTitulo">Editar Texto</h3>
@@ -461,20 +596,7 @@
 </div>
 
 <div class="header-container">
-    <h2>Lista de DT com Filtro + Ordenação + WhatsApp</h2>
-
-    <div class="acoes-sessao">
-        <b>💾 Gerenciar:</b>
-        <button class="btn-exportar" onclick="exportarSessao()">📥 Exportar</button>
-        <button class="btn-importar" onclick="document.getElementById('importarSessao').click()">📤 Importar</button>
-        <button class="btn-limpar-filtros" onclick="limparFiltros()">🔄 Limpar Filtros</button>
-        <button class="btn-criar-rota" id="btnCriarRota" onclick="criarRotaMapa()" style="display:none;">🗺️ Criar Rota no Mapa</button>
-        <input type="file" id="importarSessao" accept=".json" style="display:none;" onchange="importarSessao(this)">
-        <span class="status-salvamento" id="statusSalvamento"></span>
-        <b>📂 XLSX:</b>
-        <input type="file" id="arquivoXLSX" accept=".xlsx">
-    </div>
-
+    <div class="area-filtros-metricas">
     <div class="filtros-cascata">
         <div id="botoesBASE">
             <b>BASE:</b>
@@ -488,43 +610,48 @@
             <b>Alimentador:</b>
         </div>
     </div>
-</div>
 
-
-<!-- GRÁFICO DE CONTAGEM -->
+    <!-- GRÁFICO DE CONTAGEM -->
     <div class="grafico-container">
-        <div class="grafico-titulo">📊 MÉTRICAS EM TEMPO REAL</div>
         <div class="grafico-metricas">
             <div class="metrica-item metrica-total">
                 <span class="metrica-numero" id="metricaTotal">0</span>
-                <span class="metrica-label">Total Filtrado</span>
+                <div class="metrica-barra" style="height: 80px;"></div>
+                <span class="metrica-label">Total<br>Filtrado</span>
             </div>
             <div class="metrica-item metrica-pendente">
                 <span class="metrica-numero" id="metricaPendente">0</span>
-                <span class="metrica-label">Pendentes (Criar DT)</span>
+                <div class="metrica-barra" style="height: 45px;"></div>
+                <span class="metrica-label">Pendentes</span>
             </div>
             <div class="metrica-item metrica-criada">
                 <span class="metrica-numero" id="metricaCriada">0</span>
-                <span class="metrica-label">DTs Criadas</span>
+                <div class="metrica-barra" style="height: 65px;"></div>
+                <span class="metrica-label">DTs<br>Criadas</span>
             </div>
             <div class="metrica-item metrica-realizado">
                 <span class="metrica-numero" id="metricaRealizado">0</span>
+                <div class="metrica-barra" style="height: 55px;"></div>
                 <span class="metrica-label">Realizados</span>
             </div>
             <div class="metrica-item metrica-nao-realizado">
                 <span class="metrica-numero" id="metricaNaoRealizado">0</span>
-                <span class="metrica-label">Não Realizados</span>
+                <div class="metrica-barra" style="height: 30px;"></div>
+                <span class="metrica-label">Não<br>Realizados</span>
             </div>
             <div class="metrica-item metrica-reprogramar">
                 <span class="metrica-numero" id="metricaReprogramar">0</span>
+                <div class="metrica-barra" style="height: 25px;"></div>
                 <span class="metrica-label">Reprogramar</span>
             </div>
             <div class="metrica-item metrica-inspetor">
                 <span class="metrica-numero" id="metricaInspetor">0</span>
-                <span class="metrica-label">Enviar Inspetor</span>
+                <div class="metrica-barra" style="height: 18px;"></div>
+                <span class="metrica-label">Enviar<br>Inspetor</span>
             </div>
         </div>
     </div>
+</div>
 
 <div class="table-wrapper">
     <table id="tabelaDT">
